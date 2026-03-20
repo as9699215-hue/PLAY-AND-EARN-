@@ -18,7 +18,7 @@
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-    <script src='//libtl.com/sdk.js' data-zone='10754428' data-sdk='show_10754428'></script>
+    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 
     <style>
         body { 
@@ -217,8 +217,7 @@
 
                 <div id="social-container" class="mt-6 mb-4 hidden">
                     <h3 class="font-bold text-sm text-white mb-3 px-1 flex items-center gap-2"><i class="fas fa-users text-blue-400"></i> Join Community</h3>
-                    <div id="social-icons" class="flex justify-center gap-4 glass-card p-4 rounded-xl">
-                        </div>
+                    <div id="social-icons" class="flex justify-center gap-4 glass-card p-4 rounded-xl"></div>
                 </div>
 
             </div>
@@ -388,12 +387,12 @@
 
     <div id="ad-click-req-modal" class="fixed inset-0 z-[80] bg-black/95 hidden flex-col items-center justify-center p-6 text-center backdrop-blur-xl">
         <div class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mb-4 animate-bounce shadow-lg shadow-blue-500/50"><i class="fas fa-mouse-pointer text-4xl text-white"></i></div>
-        <h2 class="text-2xl font-bold text-white mb-2">Click Ad Claim Coin</h2>
-        <p class="text-slate-300 text-sm mb-6 max-w-xs font-bold text-yellow-300">Ads par click kare tabhi cion cleme hoga</p>
+        <h2 class="text-2xl font-bold text-white mb-2">Watch Ad & Claim</h2>
+        <p class="text-slate-300 text-sm mb-6 max-w-xs font-bold text-yellow-300">Reward lene ke liye Ads poora dekhein</p>
         <button onclick="handleAdClickLink()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-8 rounded-full shadow-lg shadow-blue-500/40 active:scale-95 transition w-full max-w-xs flex items-center justify-center gap-3">
             <span class="bg-white/20 px-2 py-0.5 rounded text-[10px] font-bold">AD</span> WATCH AD
         </button>
-        <p class="text-xs text-slate-500 mt-4 max-w-[200px]">Ad par click karke browser open karein, fir back aayein.</p>
+        <p class="text-xs text-slate-500 mt-4 max-w-[200px]">Ad ko bina skip kiye complete dekhein.</p>
     </div>
 
     <div id="claim-overlay" class="fixed inset-0 z-[70] bg-black/90 backdrop-blur-sm hidden flex flex-col items-center justify-center p-8 text-center">
@@ -406,7 +405,6 @@
     </div>
 
     <script>
-        // Updated Firebase Configuration for PLAY AND EARN
         const firebaseConfig = {
           apiKey: "AIzaSyDHpdzEownzT9WGytgqcpSputyl641Pl74",
           authDomain: "play-and-earn-92bd0.firebaseapp.com",
@@ -416,7 +414,6 @@
           messagingSenderId: "565042187619",
           appId: "1:565042187619:web:bf353c5ce4acd1e332d756"
         };
-        // Updated appId to match the new projectId for path consistency
         const appId = "play-and-earn-92bd0";
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
@@ -425,8 +422,12 @@
         
         let currentUser = null, userData = null, tgUser = null;
         let gamesPlayedSession = 0, pendingRewardAmount = 0, pendingRewardSrc = "";
-        let isWaitingForAdClick = false;
-        let adClickStartTime = 0;
+
+        // 2. INITIALIZE ADSGRAM
+        let AdController = null;
+        if (window.Adsgram) {
+            AdController = window.Adsgram.init({ blockId: "int-25524" });
+        }
 
         const SETTINGS = { 
             gameReward: 10, 
@@ -436,7 +437,7 @@
             paymentMethods: ['Paytm', 'UPI', 'Google Pay'],
             tttReward: 10,
             mathReward: 10,
-            minWithdraw: 100 // Added Default
+            minWithdraw: 100 
         };
         
         function setupPresenceSystem(uid) {
@@ -458,21 +459,6 @@
 
         window.addEventListener('DOMContentLoaded', async () => {
             startFakePaymentSlider();
-            document.addEventListener("visibilitychange", () => {
-                if (document.visibilityState === 'visible' && isWaitingForAdClick) {
-                    const timeSpentAway = Date.now() - adClickStartTime;
-                    if (timeSpentAway > 2000) { 
-                        isWaitingForAdClick = false;
-                        const m = document.getElementById('ad-click-req-modal');
-                        m.classList.add('hidden'); m.classList.remove('flex');
-                        showToast("Verification Success!", "success");
-                        saveGameEarnings(pendingRewardAmount, "Ad Click Bonus");
-                    } else {
-                        showToast("Please click the ad correctly!", "error");
-                        isWaitingForAdClick = false; 
-                    }
-                }
-            });
 
             if (window.Telegram && window.Telegram.WebApp) {
                 const tg = window.Telegram.WebApp;
@@ -636,24 +622,22 @@
             m.classList.remove('hidden'); m.classList.add('flex');
         }
 
+        // 3. UPDATED ADSGRAM SHOW FUNCTION (FOR REQUIRED AD)
         function handleAdClickLink() {
-            isWaitingForAdClick = true;
-            adClickStartTime = Date.now();
-            
-            if (typeof show_10754428 === 'function') {
-                show_10754428().then(() => {
-                    if (isWaitingForAdClick) {
-                        isWaitingForAdClick = false;
-                        showToast("You must CLICK the ad to claim!", "error");
-                    }
-                }).catch(e => {
-                    console.error("Ad Error", e);
-                    showToast("Ad Failed. Try again.", "error");
-                    isWaitingForAdClick = false;
+            if (AdController) {
+                AdController.show().then((result) => {
+                    // Ad was successfully watched
+                    const m = document.getElementById('ad-click-req-modal');
+                    m.classList.add('hidden'); m.classList.remove('flex');
+                    showToast("Bonus Claimed Successfully!", "success");
+                    saveGameEarnings(pendingRewardAmount, "Ad Watch Bonus");
+                }).catch((error) => {
+                    // Ad was skipped or failed
+                    console.error("Adsgram Error:", error);
+                    showToast("Ad was not completed. Try again.", "error");
                 });
             } else {
-                showToast("Ad Not Ready", "error");
-                isWaitingForAdClick = false;
+                showToast("Ad SDK Not Ready", "error");
             }
         }
 
@@ -663,20 +647,23 @@
             document.getElementById('claim-overlay').classList.add('flex');
         }
 
+        // 4. UPDATED ADSGRAM SHOW FUNCTION (FOR REGULAR GAME WINS)
         function startAdSequence() {
             document.getElementById('claim-overlay').classList.add('hidden');
             document.getElementById('claim-overlay').classList.remove('flex');
             showToast("Loading Ad...", "info");
             
-            if (typeof show_10754428 === 'function') {
-                show_10754428().then(() => {
+            if (AdController) {
+                AdController.show().then((result) => {
                     saveGameEarnings(pendingRewardAmount, pendingRewardSrc);
-                }).catch(e => {
-                    console.error('Monetag error', e);
-                    saveGameEarnings(pendingRewardAmount, pendingRewardSrc);
+                }).catch((error) => {
+                    console.error('Adsgram error', error);
+                    // You can choose whether to reward them or not if ad fails. 
+                    // Currently, if the ad fails, they won't get coins.
+                    showToast("Ad failed to load or skipped.", "error");
                 });
             } else {
-                console.warn("Monetag SDK not ready");
+                console.warn("Adsgram SDK not ready");
                 saveGameEarnings(pendingRewardAmount, pendingRewardSrc);
             }
         }
@@ -937,13 +924,12 @@
             } catch (e) { showToast("Error", "error"); }
         }
 
-        // --- FIXED: Close Button Logic ---
         function showSuccessModal() {
              const modal = document.getElementById('payment-success-modal');
              if(modal) {
                  modal.classList.remove('hidden');
                  modal.classList.add('flex');
-                 modal.style.display = 'flex'; // Force show
+                 modal.style.display = 'flex'; 
                  
                  const sound = document.getElementById('success-sound');
                  if(sound) {
@@ -951,7 +937,6 @@
                     sound.play().catch(e => console.log("Audio play prevented", e));
                  }
 
-                 // NEW: Auto Close after 5 seconds
                  setTimeout(() => {
                      closeSuccessModal();
                  }, 5000);
@@ -963,7 +948,7 @@
             if(modal) {
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
-                modal.style.display = 'none'; // Force hide
+                modal.style.display = 'none'; 
             }
             
             const sound = document.getElementById('success-sound');
