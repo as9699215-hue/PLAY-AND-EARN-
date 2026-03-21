@@ -18,7 +18,7 @@
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+    <script src="https://ad.gigapub.tech/script?id=5906"></script>
 
     <style>
         body { 
@@ -423,11 +423,7 @@
         let currentUser = null, userData = null, tgUser = null;
         let gamesPlayedSession = 0, pendingRewardAmount = 0, pendingRewardSrc = "";
 
-        // 2. INITIALIZE ADSGRAM
-        let AdController = null;
-        if (window.Adsgram) {
-            AdController = window.Adsgram.init({ blockId: "25611" });
-        }
+        // Gigapub initializes automatically via the script tag in the header.
 
         const SETTINGS = { 
             gameReward: 10, 
@@ -622,18 +618,16 @@
             m.classList.remove('hidden'); m.classList.add('flex');
         }
 
-        // 3. UPDATED ADSGRAM SHOW FUNCTION (FOR REQUIRED AD)
+        // 2. GIGAPUB TRIGGER FOR REQUIRED AD
         function handleAdClickLink() {
-            if (AdController) {
-                AdController.show().then((result) => {
-                    // Ad was successfully watched
+            if (typeof window.showGiga === 'function') {
+                window.showGiga().then(() => {
                     const m = document.getElementById('ad-click-req-modal');
                     m.classList.add('hidden'); m.classList.remove('flex');
                     showToast("Bonus Claimed Successfully!", "success");
                     saveGameEarnings(pendingRewardAmount, "Ad Watch Bonus");
                 }).catch((error) => {
-                    // Ad was skipped or failed
-                    console.error("Adsgram Error:", error);
+                    console.error("Gigapub Error:", error);
                     showToast("Ad was not completed. Try again.", "error");
                 });
             } else {
@@ -647,23 +641,21 @@
             document.getElementById('claim-overlay').classList.add('flex');
         }
 
-        // 4. UPDATED ADSGRAM SHOW FUNCTION (FOR REGULAR GAME WINS)
+        // 3. GIGAPUB TRIGGER FOR REGULAR GAME WINS
         function startAdSequence() {
             document.getElementById('claim-overlay').classList.add('hidden');
             document.getElementById('claim-overlay').classList.remove('flex');
             showToast("Loading Ad...", "info");
             
-            if (AdController) {
-                AdController.show().then((result) => {
+            if (typeof window.showGiga === 'function') {
+                window.showGiga().then(() => {
                     saveGameEarnings(pendingRewardAmount, pendingRewardSrc);
                 }).catch((error) => {
-                    console.error('Adsgram error', error);
-                    // You can choose whether to reward them or not if ad fails. 
-                    // Currently, if the ad fails, they won't get coins.
+                    console.error('Gigapub error', error);
                     showToast("Ad failed to load or skipped.", "error");
                 });
             } else {
-                console.warn("Adsgram SDK not ready");
+                console.warn("Gigapub SDK not ready");
                 saveGameEarnings(pendingRewardAmount, pendingRewardSrc);
             }
         }
